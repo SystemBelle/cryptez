@@ -82,8 +82,8 @@ DEL_TXT () {
 }
 
 TRAP () {
-	echo -e "caught signal\nWARNING: decrypted files may exist!"
-	kill -- "-$$"
+    echo -e "caught signal\nWARNING: decrypted files may exist!"
+    kill -- "-$$"
 }
 
 # Trap signals
@@ -91,15 +91,17 @@ trap 'TRAP; exit 1' 2 15
 
 # PROCESS OPTIONS
 while
-	getopts ":ef:mh" options; do
-	    case $options in
-		    e ) EDIT=1 ;;
-		    f ) infile="$OPTARG" ;;
+    getopts ":emh" options; do
+        case $options in
+            e ) EDIT=1 ;;
             m ) MV=1 ;;
             h ) USAGE && exit 0 ;;
-		    * ) USAGE && exit 1 ;;
-	    esac
+            * ) USAGE && exit 1 ;;
+        esac
 done
+shift $(($OPTIND - 1))
+
+infile="$1"
 
 # Make sure DEC_DIR exists
 if [ ! -d $DEC_DIR ]; then
@@ -113,17 +115,17 @@ fi
 if
     [ -e ${ENC_DIR}/${infile} ]
 then
-	FILE="${ENC_DIR}/${infile}"
+    FILE="${ENC_DIR}/${infile}"
     FILE_NAME="$infile"
     FILE_PATH="$ENC_DIR"
 elif
     [ -e ${ENC_DIR}/${infile}.cryptez ]
 then
-	FILE="${ENC_DIR}/${infile}.cryptez"
+    FILE="${ENC_DIR}/${infile}.cryptez"
     FILE_NAME="${infile}.cryptez"
     FILE_PATH="$ENC_DIR"
 else
-	FILE=${infile}
+    FILE=${infile}
     FILE_NAME=`$basename "$infile"`
     FILE_PATH=`$dirname "$infile"`
 fi
@@ -131,13 +133,13 @@ fi
 
 # Error out if input file doesn't exist and "-e" option not given
 if ! [ -e "$FILE" ] && [ $EDIT -eq 0 ]; then
-	echo "$FILE does not exist, use '-e' to open new file"
-	exit 1
+    echo "$FILE does not exist, use '-e' to open new file"
+    exit 1
 fi
 
 # if input file is "data", try to decrypt
 if
-	$file "$FILE" | grep "data" &>/dev/null
+    $file "$FILE" | grep "data" &>/dev/null
 then
     DECRYPT "$FILE"
 fi
