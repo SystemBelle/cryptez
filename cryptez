@@ -14,7 +14,7 @@
 # space, i.e. /dev/shm)
 
 # Default location of encrypted files
-ENC_DIR='/home/jamie/Kinetic/secret'
+ENC_DIR='~/.cryptez'
 
 # Decrypted files directory, this may be the same directory as ENC_DIR.
 # It's recommended to use a separate directory on a ramdisk
