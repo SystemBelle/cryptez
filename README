@@ -5,6 +5,8 @@
 
 Cryptez is a script that makes it easy to maintain encrypted text files.
 
+Tilde expansion for configuration variables (e.g. ENC_DIR) only works when unquoted
+
 
 HOWTO
 

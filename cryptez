@@ -6,19 +6,18 @@
 # License: GPLv3
 # Copyright 2011-<CURRENT YEAR> Jamie Carranza (jamie@demurgatroid.net)
 
-# Makes maintaining encrypted files simple.  Optionally store encrypted
-# files in ENC_DIR for easy access
+# Makes maintaining encrypted files simple.  Encrypted files are kept in
+# SECRETS_DIR for easy access.
 
-# Cryptez only writes decrypted files to the directory specified as "DEC_DIR",
-# this directory should be located in memory (ramdisk or shared memory
-# space, i.e. /dev/shm)
+# Cryptez only writes decrypted files to the directory specified as "TMP_DIR",
+# this directory should be located in memory, e.g. tmpfs
 
 # Default location of encrypted files
-ENC_DIR='~/.cryptez'
+SECRETS_DIR=~/.cryptez
 
-# Decrypted files directory, this may be the same directory as ENC_DIR.
+# Decrypted files directory, this may be the same directory as SECRETS_DIR.
 # It's recommended to use a separate directory on a ramdisk
-DEC_DIR='/dev/shm'
+TMP_DIR='/dev/shm'
 
 # Use anything valid for use with the `openssl` command
 CIPHER='aes-256-cbc'
@@ -38,52 +37,27 @@ PATH='/bin:/usr/bin'
 PWD=`pwd`
 MV=0
 
+umask 077
+
 USAGE () {
 cat <<EOF
-Usage: cryptez [ OPTIONS ] [ -f FILE ]
+Usage: cryptez [ OPTIONS ] [ FILE ]
+
+View, create, and edit encrypted files
 
 OPTIONS
-    -e      edit decrypted file or open a new file for editing.
-    -f      file to operate on
-    -m      create new file in $ENC_DIR
+    -e      edit
+    -c      cipher
     -h      display usage
 
 EOF
 exit 0
 }
 
-# Takes a file as arg, encrypts it, and outputs with ".cryptez" extension
-ENCRYPT () {
-    if
-        openssl $CIPHER -salt -in "$1" -out "${DEC_DIR}/${FILE_NAME}.cryptez"
-    then :
-    else
-        echo 'encryption failed ...exiting'
-        exit 0
-    fi
-}
-
-# takes encrypted file as arg, decrypts it, and outputs with ".cryptez.txt"
-# extension in DEC_DIR
-DECRYPT () {
-    if
-        openssl $CIPHER -d -salt -in "$1" \
-        -out "${DEC_DIR}/${FILE_NAME}.cryptez.txt"
-    then :
-    else
-        echo 'decryption failed ...exiting'
-        exit 0
-    fi
-}
-
-# Delete any decrypted files (.cryptez.txt extension) in $DEC_DIR
-DEL_TXT () {
-    rm -f ${DEC_DIR}/*.cryptez.txt
-}
-
 TRAP () {
     echo -e "caught signal\nWARNING: decrypted files may exist!"
-    kill -- "-$$"
+    #kill -- "-$$"
+    exit
 }
 
 # Trap signals
@@ -91,80 +65,57 @@ trap 'TRAP; exit 1' 2 15
 
 # PROCESS OPTIONS
 while
-    getopts ":emh" options; do
+    getopts ":ec:h" options; do
         case $options in
             e ) EDIT=1 ;;
-            m ) MV=1 ;;
+            c ) CIPHER="$OPTARG" ;;
             h ) USAGE && exit 0 ;;
             * ) USAGE && exit 1 ;;
         esac
 done
 shift $(($OPTIND - 1))
 
-infile="$1"
+NAME="$1"
 
-# Make sure DEC_DIR exists
-if [ ! -d $DEC_DIR ]; then
-    echo "DEC_DIR does not exist... exiting"
+# Make sure TMP_DIR exists
+if [ ! -d $TMP_DIR ]; then
+    echo "$TMP_DIR does not exist... exiting"
     exit 1
 fi
 
-## Search for file to work with, make sure it exists
-
-# if $infile exists in $ENC_DIR use it
-if
-    [ -e ${ENC_DIR}/${infile} ]
-then
-    FILE="${ENC_DIR}/${infile}"
-    FILE_NAME="$infile"
-    FILE_PATH="$ENC_DIR"
-elif
-    [ -e ${ENC_DIR}/${infile}.cryptez ]
-then
-    FILE="${ENC_DIR}/${infile}.cryptez"
-    FILE_NAME="${infile}.cryptez"
-    FILE_PATH="$ENC_DIR"
-else
-    FILE=${infile}
-    FILE_NAME=`$basename "$infile"`
-    FILE_PATH=`$dirname "$infile"`
-fi
-
-
 # Error out if input file doesn't exist and "-e" option not given
-if ! [ -e "$FILE" ] && [ $EDIT -eq 0 ]; then
-    echo "$FILE does not exist, use '-e' to open new file"
+if ! [ -e "${SECRETS_DIR}/${NAME}.cryptez" ] && [ $EDIT -eq 0 ]; then
+    echo "${SECRETS_DIR}/${NAME}.cryptez does not exist, use '-e' to open new file"
     exit 1
 fi
 
 # if input file is "data", try to decrypt
 if
-    $file "$FILE" | grep "data" &>/dev/null
+    file "${SECRETS_DIR}/${NAME}.cryptez" | grep "data" &>/dev/null
 then
-    DECRYPT "$FILE"
+        if
+        
+        openssl $CIPHER -d -salt -in "${SECRETS_DIR}/${NAME}.cryptez" \
+        -out "${TMP_DIR}/${NAME}.cryptez.txt"
+    then :
+    else
+        echo 'decryption failed ...exiting'
+        exit 0
+    fi
 fi
 
 if
     [ $EDIT -eq 0 ]
 then
-    $EDITOR_RO ${DEC_DIR}/${FILE_NAME}.cryptez.txt
-    DEL_TXT
+    $EDITOR_RO ${TMP_DIR}/${NAME}.cryptez.txt
+    rm -f "${TMP_DIR}/${NAME}.cryptez.txt"
     exit 0
 fi
 
-[ $EDIT -eq 1 ] && $EDITOR_RW ${DEC_DIR}/${FILE_NAME}.cryptez.txt
+[ $EDIT -eq 1 ] && $EDITOR_RW ${TMP_DIR}/${NAME}.cryptez.txt
 
 # Encrypt file
-ENCRYPT ${DEC_DIR}/${FILE_NAME}.cryptez.txt
+openssl $CIPHER -salt -in ${TMP_DIR}/${NAME}.cryptez.txt -out "${SECRETS_DIR}/${NAME}.cryptez"
 
-DEL_TXT
-
-# Move encrypted file where it belongs
-if
-    [ $MV -eq 1 ]
-then
-    mv ${DEC_DIR}/${FILE_NAME}.cryptez ${ENC_DIR}/${FILE_NAME}.cryptez
-else
-    mv ${DEC_DIR}/${FILE_NAME}.cryptez ${FILE}
-fi
+rm -f "${TMP_DIR}/${NAME}.cryptez.txt"
 
