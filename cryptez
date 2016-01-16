@@ -32,28 +32,14 @@ editor_ro='/usr/bin/vi -R'
 # Whether to open for editing by default (0 = no, 1 = yes)
 EDIT='0'
 
-# Shell Command Paths
-awk='/usr/bin/awk'
-basename='/usr/bin/basename'
-cat='/bin/cat'
-dirname='/usr/bin/dirname'
-echo='/bin/echo'
-file='/usr/bin/file'
-grep='/usr/bin/grep'
-kill='/bin/kill'
-mkdir='/bin/mkdir'
-mv='/bin/mv'
-openssl='/usr/bin/openssl'
-pwd='/bin/pwd'
-rm='/bin/rm'
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
-# -=-=-=-=-DO NOT EDIT BELOW THIS LINE-=-=-=-=-=-=-=-=-=-=-
-
-PWD=`$pwd`
+PATH='/bin:/usr/bin'
+PWD=`pwd`
 MV=0
 
 USAGE () {
-$cat <<EOF
+cat <<EOF
 Usage: cryptez [ OPTIONS ] [ -f FILE ]
 
 OPTIONS
@@ -70,10 +56,10 @@ exit 0
 # Takes a file as arg, encrypts it, and outputs with ".cryptez" extension
 ENCRYPT () {
     if
-        $openssl $CIPHER -salt -in "$1" -out "${DEC_DIR}/${FILE_NAME}.cryptez"
+        openssl $CIPHER -salt -in "$1" -out "${DEC_DIR}/${FILE_NAME}.cryptez"
     then :
     else
-        $echo 'encryption failed ...exiting'
+        echo 'encryption failed ...exiting'
         exit 0
     fi
 }
@@ -82,23 +68,23 @@ ENCRYPT () {
 # extension in DEC_DIR
 DECRYPT () {
     if
-        $openssl $CIPHER -d -salt -in "$1" \
+        openssl $CIPHER -d -salt -in "$1" \
         -out "${DEC_DIR}/${FILE_NAME}.cryptez.txt"
     then :
     else
-        $echo 'decryption failed ...exiting'
+        echo 'decryption failed ...exiting'
         exit 0
     fi
 }
 
 # Delete any decrypted files (.cryptez.txt extension) in $DEC_DIR
 DEL_TXT () {
-    $rm -f ${DEC_DIR}/*.cryptez.txt
+    rm -f ${DEC_DIR}/*.cryptez.txt
 }
 
 TRAP () {
-	$echo -e "caught signal\nWARNING: decrypted files may exist!"
-	$kill -- "-$$"
+	echo -e "caught signal\nWARNING: decrypted files may exist!"
+	kill -- "-$$"
 }
 
 # Trap signals
@@ -118,7 +104,7 @@ done
 
 # Make sure DEC_DIR exists
 if [ ! -d $DEC_DIR ]; then
-    $echo "DEC_DIR does not exist... exiting"
+    echo "DEC_DIR does not exist... exiting"
     exit 1
 fi
 
@@ -146,13 +132,13 @@ fi
 
 # Error out if input file doesn't exist and "-e" option not given
 if ! [ -e "$FILE" ] && [ $EDIT -eq 0 ]; then
-	$echo "$FILE does not exist, use '-e' to open new file"
+	echo "$FILE does not exist, use '-e' to open new file"
 	exit 1
 fi
 
 # if input file is "data", try to decrypt
 if
-	$file "$FILE" | $grep "data" &>/dev/null
+	$file "$FILE" | grep "data" &>/dev/null
 then
     DECRYPT "$FILE"
 fi
@@ -176,8 +162,8 @@ DEL_TXT
 if
     [ $MV -eq 1 ]
 then
-    $mv ${DEC_DIR}/${FILE_NAME}.cryptez ${ENC_DIR}/${FILE_NAME}.cryptez
+    mv ${DEC_DIR}/${FILE_NAME}.cryptez ${ENC_DIR}/${FILE_NAME}.cryptez
 else
-    $mv ${DEC_DIR}/${FILE_NAME}.cryptez ${FILE}
+    mv ${DEC_DIR}/${FILE_NAME}.cryptez ${FILE}
 fi
 
