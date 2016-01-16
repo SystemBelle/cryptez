@@ -24,10 +24,10 @@ DEC_DIR='/dev/shm'
 CIPHER='aes-256-cbc'
 
 # Read/write editor command
-editor_rw='/usr/bin/vim'
+EDITOR_RW='/usr/bin/vim'
 
 # Read only editor command
-editor_ro='/usr/bin/vi -R'
+EDITOR_RO='/usr/bin/vi -R'
 
 # Whether to open for editing by default (0 = no, 1 = yes)
 EDIT='0'
@@ -145,12 +145,12 @@ fi
 if
     [ $EDIT -eq 0 ]
 then
-    $editor_ro ${DEC_DIR}/${FILE_NAME}.cryptez.txt
+    $EDITOR_RO ${DEC_DIR}/${FILE_NAME}.cryptez.txt
     DEL_TXT
     exit 0
 fi
 
-[ $EDIT -eq 1 ] && $editor_rw ${DEC_DIR}/${FILE_NAME}.cryptez.txt
+[ $EDIT -eq 1 ] && $EDITOR_RW ${DEC_DIR}/${FILE_NAME}.cryptez.txt
 
 # Encrypt file
 ENCRYPT ${DEC_DIR}/${FILE_NAME}.cryptez.txt
