@@ -45,10 +45,9 @@ Usage: cryptez [ OPTIONS ] [ -f FILE ]
 OPTIONS
     -e      edit decrypted file or open a new file for editing.
     -f      file to operate on
-    -m      create new file in ENC_DIR
+    -m      create new file in $ENC_DIR
     -h      display usage
 
-ENC_DIR: $ENC_DIR
 EOF
 exit 0
 }
