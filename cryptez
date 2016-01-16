@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Jamie Carranza (jamie.carranza@gmail.com)
-# September 1, 2011
-# Status: HEAD
+# cryptez-<VERSION>
+# Month DD, YYYY
+
+# License: GPLv3
+# Copyright 2011-<CURRENT YEAR> Jamie Carranza (jamie@demurgatroid.net)
 
 # Makes maintaining encrypted files simple.  Optionally store encrypted
 # files in ENC_DIR for easy access
