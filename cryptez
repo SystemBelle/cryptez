@@ -15,9 +15,8 @@
 # Default location of encrypted files
 SECRETS_DIR=~/.cryptez
 
-# Decrypted files directory, this may be the same directory as SECRETS_DIR.
-# It's recommended to use a separate directory on a ramdisk
-TMP_DIR='/dev/shm'
+# Decrypted files directory
+TMP_DIR="/tmp/cryptez.${RANDOM}"
 
 # Use anything valid for use with the `openssl` command
 CIPHER='aes-256-cbc'
@@ -77,11 +76,7 @@ shift $(($OPTIND - 1))
 
 NAME="$1"
 
-# Make sure TMP_DIR exists
-if [ ! -d $TMP_DIR ]; then
-    echo "$TMP_DIR does not exist... exiting"
-    exit 1
-fi
+mkdir "$TMP_DIR"
 
 # Error out if input file doesn't exist and "-e" option not given
 if ! [ -e "${SECRETS_DIR}/${NAME}.cryptez" ] && [ $EDIT -eq 0 ]; then
@@ -108,7 +103,7 @@ if
     [ $EDIT -eq 0 ]
 then
     $EDITOR_RO ${TMP_DIR}/${NAME}.cryptez.txt
-    rm -f "${TMP_DIR}/${NAME}.cryptez.txt"
+    rm -Rf "$TMP_DIR"
     exit 0
 fi
 
@@ -117,5 +112,5 @@ fi
 # Encrypt file
 openssl $CIPHER -salt -in ${TMP_DIR}/${NAME}.cryptez.txt -out "${SECRETS_DIR}/${NAME}.cryptez"
 
-rm -f "${TMP_DIR}/${NAME}.cryptez.txt"
+rm -Rf "$TMP_DIR"
 
