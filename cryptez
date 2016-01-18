@@ -84,6 +84,12 @@ if ! [ -e "${SECRETS_DIR}/${NAME}.cryptez" ] && [ $EDIT -eq 0 ]; then
     exit 1
 fi
 
+if [ -d "$SECRETS_DIR" ] || mkdir -p "$SECRETS_DIR"; then :
+else
+    echo "Cannot create $SECRETS_DIR"
+    exit 1
+fi
+
 # if input file is "data", try to decrypt
 if
     file "${SECRETS_DIR}/${NAME}.cryptez" | grep "data" &>/dev/null
