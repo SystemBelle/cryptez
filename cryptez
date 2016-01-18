@@ -15,7 +15,7 @@
 # Default location of encrypted files
 SECRETS_DIR=~/.cryptez
 
-# Decrypted files directory
+# Decrypted files directory - this directory will be repeatedly created/destroyed
 TMP_DIR="/tmp/cryptez.${RANDOM}"
 
 # Use anything valid for use with the `openssl` command
@@ -45,9 +45,10 @@ Usage: cryptez [ OPTIONS ] [ FILE ]
 View, create, and edit encrypted files
 
 OPTIONS
-    -e      edit
-    -c      cipher
-    -h      display usage
+    -e              edit
+    -c [CIPHER]     cipher
+    -i              import
+    -h              display usage
 
 EOF
 exit 0
@@ -55,7 +56,6 @@ exit 0
 
 TRAP () {
     echo -e "caught signal\nWARNING: decrypted files may exist!"
-    #kill -- "-$$"
     exit
 }
 
@@ -63,20 +63,29 @@ TRAP () {
 trap 'TRAP; exit 1' 2 15
 
 # PROCESS OPTIONS
+IMPORT=0
 while
-    getopts ":ec:h" options; do
+    getopts ":ec:ih" options; do
         case $options in
             e ) EDIT=1 ;;
             c ) CIPHER="$OPTARG" ;;
+            i ) IMPORT=1 ;;
             h ) USAGE && exit 0 ;;
             * ) USAGE && exit 1 ;;
         esac
 done
 shift $(($OPTIND - 1))
 
-NAME="$1"
+# Get the name and optionally the path to secret file
+NAME=`basename "$1"`
+DIR="`dirname "$1"`/"
 
 mkdir "$TMP_DIR"
+
+if [ $IMPORT -eq 1 ]; then
+    cp "${DIR}${NAME}" "${TMP_DIR}/${NAME}.cryptez.txt"
+    EDIT=1
+fi
 
 # Error out if input file doesn't exist and "-e" option not given
 if ! [ -e "${SECRETS_DIR}/${NAME}.cryptez" ] && [ $EDIT -eq 0 ]; then
@@ -94,13 +103,13 @@ fi
 if
     file "${SECRETS_DIR}/${NAME}.cryptez" | grep "data" &>/dev/null
 then
-        if
-        
+    if
         openssl $CIPHER -d -salt -in "${SECRETS_DIR}/${NAME}.cryptez" \
         -out "${TMP_DIR}/${NAME}.cryptez.txt"
     then :
     else
         echo 'decryption failed ...exiting'
+        rm -Rf "${TMP_DIR}"
         exit 0
     fi
 fi
@@ -115,7 +124,6 @@ fi
 
 [ $EDIT -eq 1 ] && $EDITOR_RW ${TMP_DIR}/${NAME}.cryptez.txt
 
-# Encrypt file
 openssl $CIPHER -salt -in ${TMP_DIR}/${NAME}.cryptez.txt -out "${SECRETS_DIR}/${NAME}.cryptez"
 
 rm -Rf "$TMP_DIR"
